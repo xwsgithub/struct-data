@@ -7,7 +7,7 @@ template<typename T>
 class m_list
 {
 protected:
-    T arry[1000];
+    T arry[10000];
     int count;
 public:
     m_list();
