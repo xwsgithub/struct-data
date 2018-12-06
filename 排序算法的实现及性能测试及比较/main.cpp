@@ -10,14 +10,17 @@
 
 #include <iostream>
 #include "m_list.h"
-#include "Link_List.h"     //有哑结点的链表
+#include <fstream>
+#include <sstream>
+
+void compare(string filename);
 
 class list:public m_list<int>
 {
     time_t time_start,time_end;        //记录时间
     int compar_count;                  //记录比较次数
     int move_count;                    //记录移动次数
-    int time;
+    unsigned int time;
     void recursive_quickSort(int to_sort_first,int to_sort_last);   //快速排序里的递归部分
     void insertHeap(int current,int low,int high);           //私有函数用于堆排序
     void recursive_heapSort(int low,int high);               //堆排序中的递归部分
@@ -43,61 +46,14 @@ public:
     void buildHeap();        //初始化最大堆组
     void heapSort();          //堆排序
     void print();
+    void readData(string filename);       //读文件
     list()
     {
         compar_count=0;        //初始化为0
         move_count=0;
     }
-    
 };
 
-class integer:public Object    //继承数据域，用于链表操作
-{
-    int data;
-public:
-    void Print()
-    {
-        cout<<data<<" ";
-    }
-    integer(int num)
-    {
-        data=num;
-    }
-    int getData(){
-        return data;
-    }
-    
-};
-
-class link_list:public Link_List{
-    time_t time_start,time_end;
-    int time,compare_count,move_count;
-public:
-    link_list(){
-        compare_count=0;
-        move_count=0;
-    }
-    void mergeSort(){
-        time_start=clock();      //初始时间
-        recursive_mergeSort(head);
-        time_end=clock();        //截止时间
-        time=difftime(time_end, time_start);
-        
-    }       //归并排序
-    void recursive_mergeSort(Node* &sub_list); //归并排序的递归函数,注意用引用
-    Node* divide_half(Node*sub_list);      //返回中间的指针
-    Node* merge(Node* first,Node* second);
-    void printList(){
-        Node* first=head->next;
-        while(first!=NULL)
-        {
-            first->data->Print();
-            first=first->next;
-        }
-        cout<<"比较次数为："<<compare_count<<","<<"移动次数为："<<move_count<<"排序时间："<<difftime(time_end, time_start)<<"ms"<<endl;
-    }
-
-};
 
 void list::insetionSort()
 {
@@ -122,6 +78,7 @@ void list::insetionSort()
         }
     }
     time_end=clock();     //结束时间
+    time=difftime(time_end, time_start);
 }
 
 void list::selectionSort()
@@ -147,16 +104,17 @@ void list::selectionSort()
         arry[i]=temp;
     }
     time_end=clock();     //结束时间
+    time=difftime(time_end, time_start);
 }
 
 void list::shellSort()
 {
     time_start=clock();    //初始时间
-    for(int increment=count/2;increment>0;increment/=2)
+    for(int increment=count/2;increment>0;increment/=2)     //初始间隔为长度的一半，每次循环减少一半，直到间隔等于0终止循环
     {
         for(int i=0;i<increment;i++)
-        {
-            compar_count++;
+        {                                                      //将间隔为increment的数排序
+            compar_count++;                                     //也就相当于把原来的插入排序间隔为1变成间隔为increment
             for(int j=i+increment;j<count;j+=increment)
             {
                 compar_count++;
@@ -176,30 +134,31 @@ void list::shellSort()
         }
     }
     time_end=clock();     //结束时间
+    time=difftime(time_end, time_start);
 }
 
 void list::recursive_quickSort(int to_sort_first,int to_sort_last){
     int first=to_sort_first;
     int last=to_sort_last;
     compar_count++;
-    if(first>=last)
+    if(first>=last)    //停止递归条件
         return ;
-    int key=arry[to_sort_first];
-    while (first<last) {
+    int key=arry[to_sort_first];            //健值为要排序的位置的第一个
+    while (first<last) {               // 只要first和last没有碰头，就一直循环
         compar_count+=3;
         move_count+=2;
-        while (key<=arry[last]&&first<last) {
+        while (key<=arry[last]&&first<last) {   //若key小于后面的数以及first小于last，last便往前走
             last--;
         }
-            arry[first]=arry[last];
-        while (key>=arry[first]&&first<last) {
-            first++;
+            arry[first]=arry[last];         //当循环结束的时候，说明有一个数比key小或者first和last碰面，当符合第一种情况时，将较小的数放在
+        while (key>=arry[first]&&first<last) {    //first上，若符合第二种情况，结果也不变
+            first++;                         //下面的同理
         }
             arry[last]=arry[first];
     }
-    move_count++;
+    move_count++;       //当走出while循环后，说明first左边的数全是小于等于key的数，右边的数全是大于等于key的数
     arry[first]=key;
-    recursive_quickSort(to_sort_first, first-1);
+    recursive_quickSort(to_sort_first, first-1);    //进行递归
     recursive_quickSort(first+1, to_sort_last);
 }
 
@@ -319,103 +278,92 @@ void list::recursive_heapSort(int low,int high){
     recursive_heapSort(low, high-1);
 }
 
-
-
-
-void link_list::recursive_mergeSort(Node* &sub_list)
-{
-    compare_count++;
-    if(sub_list->next!=NULL&&sub_list->next->next!=NULL){        //终止递归的条件
-        Node*half_position=divide_half(sub_list);
-        recursive_mergeSort(half_position);
-        recursive_mergeSort(sub_list);
-        sub_list=merge(sub_list,half_position);
-    }
+void list::print(){
+//    for(int i=0;i<count;i++){
+//        cout<<arry[i]<<" ";
+//    }
+    cout<<"比较次数为："<<compar_count<<" 移动次数为："<<move_count<<" 比较时间为："<<time<<"ms"<<endl;
 }
 
-Node* link_list::divide_half(Node*sub_list){  //带有哑结点的二分法,n2移动的速度是n1的两倍
-    Node *n1,*n2,*half_position=new Node();
-    compare_count++;
-    if(sub_list==NULL) return NULL;
-    n1=sub_list;
-    n2=sub_list;
-    while(n2!=NULL){
-        compare_count+=2;
-        n2=n2->next;
-        if(n2!=NULL){
-            n1=n1->next;
-            n2=n2->next;
+void list::readData(string filename){
+    ifstream in(filename);
+    int pos=0;
+    for(string str;getline(in,str);){
+        stringstream sstr(str);
+        int num;
+        while(sstr>>num){
+         this->setnum(pos, num);
+            pos++;
         }
     }
-    half_position->next=n1->next;
-    n1->next=NULL;
-    return half_position;     //返回一个哑结点
 }
 
-Node* link_list::merge(Node* first,Node* second){        //我们将返回first
-    Node *firNode,*secNode,*last_sorted=first;
-    firNode=first->next;
-    secNode=second->next;
-    while(firNode!=NULL&&secNode!=NULL){
-        compare_count+=2;
-        if(firNode->data->getData()<secNode->data->getData()){
-            last_sorted->next=firNode;
-            last_sorted=firNode;
-            firNode=firNode->next;
-        }
-        else{
-            last_sorted->next=secNode;
-            last_sorted=secNode;
-            secNode=secNode->next;
-        }
-    }
-    compare_count++;
-    if(firNode==NULL){
-        last_sorted->next=secNode;
-    }
-    else{
-        last_sorted->next=firNode;
-    }
-    return first;
-}
-
-void list::print()
-{
-    for(int i=0;i<count;i++)
-        cout<<arry[i]<<" ";
-    cout<<"比较次数为："<<compar_count<<","<<"移动次数为："<<move_count<<"排序时间："<<difftime(time_end, time_start)<<"ms"<<endl;
-}
 
 
 
 
 int main(int argc, const char * argv[]) {
     // insert code here...
-    list l;
-    srand((unsigned)time(NULL));
-    for(int i=0;i<500;i++)
-        l.insert(i, rand()%1000);
-    
-//    l.setnum(0, 2);
-//    l.setnum(1, -1);
-//    l.setnum(2, 3);
-//    l.setnum(3, 6);
-//    l.setnum(4, 0);
-//    l.setnum(5, 10);
+    cout<<"插入排序试验情况如下所示："<<endl;
+    cout<<"排序数量为20时："<<endl;
+    cout<<"顺序："<<endl;
+    compare("/Users/xiongwei/Desktop/orded_less.txt");
+    cout<<"逆序："<<endl;
+    compare("/Users/xiongwei/Desktop/reverse_orded_less.txt");
+    cout<<"随机数："<<endl;
+    compare("/Users/xiongwei/Desktop/random_less.txt");
+    cout<<"---------------------------------------------"<<endl;
 
-    //l.insetionSort();
-    //l.selectionSort();
-    //l.shellSort();
-    //l.quickSort();
-    l.mergeSort();
-    //l.heapSort();
-    l.print();
-    link_list list;
-//    for(int i=0;i<500;i++){
-//        integer *pnum=new integer (rand()%1000);
-//        Node*pnode=new Node(pnum);
-//        list.addListHead(pnode);
-//    }
-//    list.mergeSort();
-//    list.printList();
+    cout<<"排序数量为200时："<<endl;
+    cout<<"顺序："<<endl;
+    compare("/Users/xiongwei/Desktop/orded_midle.txt");
+    cout<<"逆序："<<endl;
+    compare("/Users/xiongwei/Desktop/reverse_orded_midle.txt");
+    cout<<"随机数："<<endl;
+    compare("/Users/xiongwei/Desktop/random_midle.txt");
+     cout<<"---------------------------------------------"<<endl;
+
+    cout<<"排序数量为2000时："<<endl;
+    cout<<"顺序："<<endl;
+    compare("/Users/xiongwei/Desktop/orded_large.txt");
+    cout<<"逆序："<<endl;
+    compare("/Users/xiongwei/Desktop/reverse_orded_large.txt");
+    cout<<"随机数："<<endl;
+    compare("/Users/xiongwei/Desktop/random_large.txt");
+    
+
+}
+
+
+void compare(string filename){
+    list l1;
+    l1.readData(filename);
+    l1.insetionSort();
+    cout<<"插入排序：";
+    l1.print();
+    list l2;
+    l2.readData(filename);
+    l2.selectionSort();
+    cout<<"选择排序：";
+    l2.print();
+    list l3;
+    l3.readData(filename);
+    l3.shellSort();
+    cout<<"希尔排序：";
+    l3.print();
+    list l4;
+    l4.readData(filename);
+    l4.quickSort();
+    cout<<"快速排序：";
+    l4.print();
+    list l5;
+    l5.readData(filename);
+    l5.mergeSort();
+    cout<<"归并排序：";
+    l5.print();
+    list l6;
+    l6.readData(filename);
+    l6.heapSort();
+    cout<<"堆排序";
+    l6.print();
 }
